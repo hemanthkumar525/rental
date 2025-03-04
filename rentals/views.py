@@ -1,6 +1,9 @@
 from django.shortcuts import render,redirect
 from django.contrib.auth import authenticate, login,logout
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse_lazy
+from django.contrib.auth.views import PasswordResetView
+from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth.models import User,Group
 from django.http import JsonResponse
 
@@ -19,7 +22,7 @@ def login_view(request):
             # Check user role and redirect accordingly
             if user.is_superuser:  # SA (Super Admin)
                 return redirect('/superadmin')
-            elif user.groups.filter(name='PO').exists():  # PO (Property Owner)
+            elif user.groups.filter(name='property_owner').exists():  # PO (Property Owner)
                 return redirect('property_owner')
             else:
                 return redirect('index')  # Default fallback
@@ -52,6 +55,15 @@ def add_property_owner(request):
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
+class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
+    template_name = 'users\password_reset.html'
+    email_template_name = 'users/password_reset_email.html'
+    subject_template_name = 'users/password_reset_subject'
+    success_message = "We've emailed you instructions for setting your password, " \
+                      "if an account exists with the email you entered. You should receive them shortly." \
+                      " If you don't receive an email, " \
+                      "please make sure you've entered the address you registered with, and check your spam folder."
+    success_url = reverse_lazy('index')
 
 @login_required
 def superadmin(request):
